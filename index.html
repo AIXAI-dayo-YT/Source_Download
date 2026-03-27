@@ -48,9 +48,9 @@
             <div>
                 <label class="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wider">優先プロキシ</label>
                 <select id="proxySelect" class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
-                    <option value="https://api.allorigins.win/raw?url=">AllOrigins (大容量向け)</option>
-                    <option value="https://corsproxy.io/?">CorsProxy.io (高速)</option>
-                    <option value="https://codetabs.com/cors-proxy/">CodeTabs (制限少)</option>
+                    <option value="https://api.allorigins.win/raw?url=">AllOrigins (安定版)</option>
+                    <option value="https://api.codetabs.com/v1/proxy?quest=">CodeTabs (大容量・制限少)</option>
+                    <option value="https://corsproxy.io/?">CorsProxy.io (高速・小容量)</option>
                 </select>
             </div>
         </div>
@@ -76,7 +76,7 @@
     </div>
 
     <footer class="max-w-4xl mx-auto mt-8 text-center text-slate-500 text-xs">
-        <p>※bloxd.ioのような動的サイトは、このツールで保存した後にJSエラーが出る可能性があります。</p>
+        <p>※bloxd.ioのような動的サイトは、プロキシブロックが強力な場合があります。取得できなかったファイルは個別にダウンロードが必要になることがあります。</p>
     </footer>
 
     <script>
@@ -84,11 +84,12 @@
         const statusContainer = document.getElementById('statusContainer');
         const downloadBtn = document.getElementById('downloadBtn');
         
+        // プロキシリスト（正しいAPIエンドポイントに修正）
         const PROXIES = [
             "https://api.allorigins.win/raw?url=",
+            "https://api.codetabs.com/v1/proxy?quest=",
             "https://corsproxy.io/?",
-            "https://codetabs.com/cors-proxy/",
-            "DIRECT" // プロキシなし直接試行（最終手段）
+            "https://thingproxy.freeboard.io/fetch/"
         ];
 
         function log(msg, type = 'info') {
@@ -112,7 +113,6 @@
         async function copyLog() {
             const text = Array.from(statusDiv.children).map(el => el.innerText).join('\n');
             try {
-                // Clipboard API fallback for iFrame
                 const textArea = document.createElement("textarea");
                 textArea.value = text;
                 document.body.appendChild(textArea);
@@ -141,26 +141,29 @@
             
             for (let proxy of proxyList) {
                 try {
-                    const fullUrl = proxy === "DIRECT" ? targetUrl : proxy + encodeURIComponent(targetUrl);
+                    let fullUrl = proxy + encodeURIComponent(targetUrl);
+                    let hostname = new URL(proxy).hostname;
                     
-                    // fetch options for heavy files
                     const response = await fetch(fullUrl, { 
-                        cache: 'default',
-                        mode: (proxy === "DIRECT" ? 'no-cors' : 'cors')
+                        cache: 'no-store' // キャッシュを回避して常に最新を取得
                     });
 
                     if (response.ok) return response;
                     
                     if (response.status === 413) {
-                        log(`[!] ファイルが大きすぎます (${proxy.split('/')[2]})`, 'warn');
+                        log(`[!] ファイルが大きすぎます (${hostname})`, 'warn');
                         continue;
                     }
-                    log(`[!] ${proxy.includes('?') ? proxy.split('?')[0] : proxy} で失敗 (${response.status})`, 'warn');
+                    if (response.status === 403 || response.status === 522 || response.status === 500) {
+                        log(`[!] ${hostname} で失敗 (${response.status})。次を試します...`, 'warn');
+                        continue;
+                    }
                 } catch (e) {
-                    // skip error log to avoid clutter
+                    let hostname = new URL(proxy).hostname;
+                    log(`[!] ${hostname} への接続エラー`, 'warn');
                 }
             }
-            throw new Error(`すべてのプロキシで拒否されました: ${targetUrl.substring(0, 30)}...`);
+            throw new Error(`すべてのプロキシでブロックされました: ${targetUrl.split('/').pop()}`);
         }
 
         async function startDownload() {
@@ -215,6 +218,7 @@
                 const downloadOne = async (res, idx) => {
                     try {
                         const fileName = new URL(res.url).pathname.split('/').pop() || `file_${idx}`;
+                        // キャッシュバスター（?v=2など）が含まれるURLを安全にエンコードして渡す
                         const response = await smartFetch(res.url, preferredProxy);
                         const blob = await response.blob();
                         zip.file(`${res.folder}/${fileName}`, blob);
@@ -224,7 +228,7 @@
                     }
                 };
 
-                // 並列リクエスト数を制御（サーバー負荷軽減）
+                // 並列リクエスト数を制御（サーバー負荷軽減・Cloudflare対策）
                 const batchSize = 2;
                 for (let i = 0; i < resources.length; i += batchSize) {
                     const batch = resources.slice(i, i + batchSize);
