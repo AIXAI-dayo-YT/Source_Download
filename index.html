@@ -28,66 +28,54 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <h1 class="text-3xl font-bold text-blue-400 flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
-                Resource Saver v3
+                Resource Saver v3.2 [Ultimate]
             </h1>
             <div class="flex gap-2">
-                <button onclick="copyLog()" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-xs transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-                    ログをコピー
-                </button>
+                <button onclick="copyLog()" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-xs transition-colors">ログコピー</button>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="md:col-span-2">
-                <label class="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wider">対象URL</label>
-                <input type="text" id="targetUrl" placeholder="https://bloxd.io" class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white transition-all">
+                <label class="block text-xs font-medium text-slate-500 mb-1 uppercase">対象URL</label>
+                <input type="text" id="targetUrl" placeholder="https://bloxd.io" class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-white">
             </div>
             <div>
-                <label class="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wider">優先プロキシ</label>
-                <select id="proxySelect" class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                <label class="block text-xs font-medium text-slate-500 mb-1 uppercase">優先プロキシ</label>
+                <select id="proxySelect" class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-white">
+                    <option value="https://api.codetabs.com/v1/proxy?quest=">CodeTabs (推奨: 大容量)</option>
                     <option value="https://api.allorigins.win/raw?url=">AllOrigins (安定版)</option>
-                    <option value="https://api.codetabs.com/v1/proxy?quest=">CodeTabs (大容量・制限少)</option>
-                    <option value="https://corsproxy.io/?">CorsProxy.io (高速・小容量)</option>
+                    <option value="https://corsproxy.io/?">CorsProxy.io (高速)</option>
                 </select>
             </div>
         </div>
 
-        <button onclick="startDownload()" id="downloadBtn" class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.98] transition-all px-6 py-4 rounded-lg font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-6">
-            <span>一括取得開始</span>
+        <button onclick="startDownload()" id="downloadBtn" class="w-full bg-blue-600 hover:bg-blue-500 transition-all px-6 py-4 rounded-lg font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-6">
+            <span>JS全取得・一括ダウンロード</span>
         </button>
 
         <div id="statusContainer" class="hidden">
-            <div class="flex items-center justify-between mb-2">
-                <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
-                    <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                    </span>
-                    リアルタイム・プロセスログ
-                </h2>
-                <button onclick="clearLog()" class="text-xs text-slate-500 hover:text-slate-300 underline">クリア</button>
-            </div>
-            <div id="status" class="bg-[#0f172a] p-4 rounded-lg font-mono text-[11px] overflow-y-auto h-[450px] border border-slate-700 leading-relaxed text-blue-200 shadow-inner">
+            <div id="status" class="bg-[#0f172a] p-4 rounded-lg font-mono text-[11px] overflow-y-auto h-[480px] border border-slate-700 text-blue-200">
             </div>
         </div>
     </div>
 
-    <footer class="max-w-4xl mx-auto mt-8 text-center text-slate-500 text-xs">
-        <p>※bloxd.ioのような動的サイトは、プロキシブロックが強力な場合があります。取得できなかったファイルは個別にダウンロードが必要になることがあります。</p>
+    <footer class="max-w-4xl mx-auto mt-8 text-center text-slate-500 text-[10px] space-y-1">
+        <p>※JS内の動的パスをスキャンし、WASMやJSON等の重要アセットも追跡します。</p>
+        <p>※取得漏れを防ぐため、1ファイルにつき1.5秒の待機時間を設けています。</p>
     </footer>
 
     <script>
         const statusDiv = document.getElementById('status');
         const statusContainer = document.getElementById('statusContainer');
         const downloadBtn = document.getElementById('downloadBtn');
-        
-        // プロキシリスト（正しいAPIエンドポイントに修正）
+        const sleep = ms => new Promise(res => setTimeout(res, ms));
+
         const PROXIES = [
-            "https://api.allorigins.win/raw?url=",
             "https://api.codetabs.com/v1/proxy?quest=",
+            "https://api.allorigins.win/raw?url=",
             "https://corsproxy.io/?",
             "https://thingproxy.freeboard.io/fetch/"
         ];
@@ -95,156 +83,117 @@
         function log(msg, type = 'info') {
             statusContainer.classList.remove('hidden');
             const entry = document.createElement('div');
-            entry.className = "log-entry break-all";
-            const time = new Date().toLocaleTimeString();
-            
+            entry.className = "log-entry";
             let color = "text-blue-300";
             if(type === 'error') color = "text-red-400 font-bold";
-            if(type === 'warn') color = "text-yellow-400";
             if(type === 'success') color = "text-green-400";
-
-            entry.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="${color}">${msg}</span>`;
+            entry.innerHTML = `<span class="text-slate-500">[${new Date().toLocaleTimeString()}]</span> <span class="${color}">${msg}</span>`;
             statusDiv.appendChild(entry);
             statusDiv.scrollTop = statusDiv.scrollHeight;
         }
 
-        function clearLog() { statusDiv.innerHTML = ""; }
-
-        async function copyLog() {
-            const text = Array.from(statusDiv.children).map(el => el.innerText).join('\n');
-            try {
-                const textArea = document.createElement("textarea");
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                alert("ログをクリップボードにコピーしました");
-            } catch (err) {
-                console.error("Copy failed", err);
-            }
-        }
-
-        function setButtonLoading(isLoading) {
-            downloadBtn.disabled = isLoading;
-            if (isLoading) {
-                downloadBtn.innerHTML = '<div class="loading-spinner"></div> 処理中...';
-                downloadBtn.className = "w-full bg-slate-600 px-6 py-4 rounded-lg font-bold text-lg flex items-center justify-center gap-2 mb-6 cursor-not-allowed";
-            } else {
-                downloadBtn.innerHTML = '<span>一括取得開始</span>';
-                downloadBtn.className = "w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.98] transition-all px-6 py-4 rounded-lg font-bold text-lg shadow-lg flex items-center justify-center gap-2 mb-6";
-            }
-        }
-
-        async function smartFetch(targetUrl, preferredProxy) {
+        async function smartFetch(targetUrl, preferredProxy, retryCount = 1) {
             let proxyList = [preferredProxy, ...PROXIES.filter(p => p !== preferredProxy)];
-            
             for (let proxy of proxyList) {
                 try {
-                    let fullUrl = proxy + encodeURIComponent(targetUrl);
-                    let hostname = new URL(proxy).hostname;
-                    
-                    const response = await fetch(fullUrl, { 
-                        cache: 'no-store' // キャッシュを回避して常に最新を取得
-                    });
-
+                    const response = await fetch(proxy + encodeURIComponent(targetUrl));
                     if (response.ok) return response;
-                    
-                    if (response.status === 413) {
-                        log(`[!] ファイルが大きすぎます (${hostname})`, 'warn');
-                        continue;
-                    }
-                    if (response.status === 403 || response.status === 522 || response.status === 500) {
-                        log(`[!] ${hostname} で失敗 (${response.status})。次を試します...`, 'warn');
-                        continue;
-                    }
-                } catch (e) {
-                    let hostname = new URL(proxy).hostname;
-                    log(`[!] ${hostname} への接続エラー`, 'warn');
-                }
+                } catch (e) {}
             }
-            throw new Error(`すべてのプロキシでブロックされました: ${targetUrl.split('/').pop()}`);
+            if (retryCount > 0) {
+                await sleep(2000);
+                return smartFetch(targetUrl, preferredProxy, retryCount - 1);
+            }
+            throw new Error("Fetch Failed");
         }
 
         async function startDownload() {
             let urlInput = document.getElementById('targetUrl').value.trim();
             const preferredProxy = document.getElementById('proxySelect').value;
-
             if (!urlInput) return alert("URLを入力してください");
             if (!urlInput.startsWith('http')) urlInput = 'https://' + urlInput;
-            
-            clearLog();
-            setButtonLoading(true);
-            log(`🎯 解析ターゲット: ${urlInput}`);
+
+            statusDiv.innerHTML = "";
+            downloadBtn.disabled = true;
+            downloadBtn.innerText = "解析中...";
+            log(`🎯 開始: ${urlInput}`);
 
             const zip = new JSZip();
             const fetchedUrls = new Set();
+            const queue = [];
 
             try {
-                log("📡 メインHTMLを取得しています...");
-                const mainResponse = await smartFetch(urlInput, preferredProxy);
-                const htmlText = await mainResponse.text();
-                zip.file("index.html", htmlText);
-                log("✅ index.html の保存に成功しました", "success");
+                // 1. HTML取得
+                const htmlRes = await smartFetch(urlInput, preferredProxy);
+                const html = await htmlRes.text();
+                zip.file("index.html", html);
+                log("✅ HTML保存完了", "success");
 
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlText, "text/html");
-                const resources = [];
-
-                const map = [
-                    { tag: 'img', attr: 'src', folder: 'images' },
-                    { tag: 'link[rel="stylesheet"]', attr: 'href', folder: 'css' },
-                    { tag: 'script[src]', attr: 'src', folder: 'js' },
-                    { tag: 'link[rel*="icon"]', attr: 'href', folder: 'favicons' }
-                ];
-
-                map.forEach(m => {
-                    doc.querySelectorAll(m.tag).forEach(el => {
-                        let link = el.getAttribute(m.attr);
-                        if (link && !link.startsWith('data:')) {
-                            try {
-                                const abs = new URL(link, urlInput).href;
-                                if (!fetchedUrls.has(abs)) {
-                                    resources.push({ url: abs, folder: m.folder, type: m.tag });
-                                    fetchedUrls.add(abs);
-                                }
-                            } catch(e) {}
-                        }
-                    });
+                // 2. 基本リソース抽出 (JS, CSS, WASM, JSON, Images)
+                const doc = new DOMParser().parseFromString(html, "text/html");
+                
+                // Scriptタグ
+                doc.querySelectorAll('script[src]').forEach(s => queue.push({url: s.src, folder: 'js'}));
+                // Linkタグ (CSS, Manifest, Favicon)
+                doc.querySelectorAll('link[href]').forEach(l => {
+                    if(l.rel.includes('stylesheet')) queue.push({url: l.href, folder: 'css'});
+                    else if(l.href.match(/\.(json|wasm|data)/)) queue.push({url: l.href, folder: 'assets'});
+                    else queue.push({url: l.href, folder: 'favicons'});
                 });
+                // Imageタグ
+                doc.querySelectorAll('img[src]').forEach(i => queue.push({url: i.src, folder: 'images'}));
 
-                log(`📦 ${resources.length} 個のリソースを取得順次処理します...`);
+                // URLを絶対パスに変換
+                const normalizedQueue = queue.map(item => {
+                    try { return { ...item, url: new URL(item.url, urlInput).href }; } catch(e) { return null; }
+                }).filter(i => i && !fetchedUrls.has(i.url));
 
-                const downloadOne = async (res, idx) => {
+                log(`📦 初期リスト: ${normalizedQueue.length}個のファイルを検出`);
+
+                // 3. 順次ダウンロード & ディープ・スキャン
+                for (let i = 0; i < normalizedQueue.length; i++) {
+                    const res = normalizedQueue[i];
+                    if (fetchedUrls.has(res.url)) continue;
+                    
                     try {
-                        const fileName = new URL(res.url).pathname.split('/').pop() || `file_${idx}`;
-                        // キャッシュバスター（?v=2など）が含まれるURLを安全にエンコードして渡す
+                        const fileName = new URL(res.url).pathname.split('/').pop() || `file_${i}`;
                         const response = await smartFetch(res.url, preferredProxy);
                         const blob = await response.blob();
                         zip.file(`${res.folder}/${fileName}`, blob);
-                        log(`🔹 取得成功: ${fileName}`, 'success');
-                    } catch (e) {
-                        log(`❌ 取得失敗: ${res.url}`, 'error');
-                    }
-                };
+                        fetchedUrls.add(res.url);
+                        log(`🔹 取得成功: ${fileName}`, "success");
 
-                // 並列リクエスト数を制御（サーバー負荷軽減・Cloudflare対策）
-                const batchSize = 2;
-                for (let i = 0; i < resources.length; i += batchSize) {
-                    const batch = resources.slice(i, i + batchSize);
-                    await Promise.all(batch.map((r, idx) => downloadOne(r, i + idx)));
+                        // JSファイルの場合、中身をスキャンして隠れたJSパスを探す
+                        if (fileName.endsWith('.js')) {
+                            const text = await blob.text();
+                            const subMatches = text.match(/["']\/static\/js\/[a-zA-Z0-9\._-]+\.js["']/g);
+                            if (subMatches) {
+                                subMatches.forEach(match => {
+                                    const subPath = match.replace(/["']/g, '');
+                                    const subUrl = new URL(subPath, urlInput).href;
+                                    if (!fetchedUrls.has(subUrl)) {
+                                        normalizedQueue.push({url: subUrl, folder: 'js/chunks'});
+                                        log(`  └✨ 隠しJSを発見: ${subPath.split('/').pop()}`);
+                                    }
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        log(`❌ 失敗: ${res.url}`, "error");
+                    }
+                    await sleep(1500); // サーバー攻撃と見なされないための待機
                 }
 
-                log("⚙️ ZIPデータを生成中...");
-                const content = await zip.generateAsync({ type: "blob" });
-                const host = new URL(urlInput).hostname;
-                saveAs(content, `dump_${host}.zip`);
-                log("🏁 全ての工程が完了しました。ファイルを保存しました。", "success");
+                log("⚙️ ZIP生成中...");
+                const content = await zip.generateAsync({type: "blob"});
+                saveAs(content, `full_dump_${new URL(urlInput).hostname}.zip`);
+                log("🏁 全工程完了！", "success");
 
             } catch (err) {
-                log(`🛑 停止エラー: ${err.message}`, 'error');
+                log(`🛑 エラー: ${err.message}`, "error");
             } finally {
-                setButtonLoading(false);
+                downloadBtn.disabled = false;
+                downloadBtn.innerText = "JS全取得・一括ダウンロード";
             }
         }
     </script>
