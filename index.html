@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Resource Downloader</title>
+    <!-- 外部ライブラリの読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #fff;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #status::-webkit-scrollbar { width: 6px; }
+        #status::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 font-sans">
+
+    <div class="max-w-3xl mx-auto bg-slate-800 p-6 rounded-xl shadow-2xl border border-slate-700">
+        <h1 class="text-3xl font-bold mb-2 text-blue-400 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Resource Saver Pro
+        </h1>
+        <p class="text-slate-400 mb-6 text-sm">
+            URLを入力して、HTML、画像、スクリプトを取得します。<br>
+            <span class="text-amber-400 text-xs font-semibold">※注意: bloxd.io などの大手サイトは、プロキシ経由でも接続を拒否(520/403)することがあります。</span>
+        </p>
+
+        <div class="space-y-4 mb-6">
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wider">対象URL</label>
+                <input type="text" id="targetUrl" 
+                       placeholder="example.com" 
+                       class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white transition-all">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wider">メインプロキシ</label>
+                    <select id="proxySelect" class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                        <option value="https://api.allorigins.win/raw?url=">AllOrigins (安定)</option>
+                        <option value="https://corsproxy.io/?">CorsProxy.io (高速)</option>
+                        <option value="https://thingproxy.freeboard.io/fetch/">ThingProxy (低速/予備)</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button onclick="startDownload()" id="downloadBtn"
+                            class="w-full bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2">
+                        <span>ダウンロード開始</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="statusContainer" class="hidden animate-in fade-in duration-500">
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    ログ
+                </h2>
+                <button onclick="clearLog()" class="text-xs text-slate-500 hover:text-slate-300">ログ消去</button>
+            </div>
+            <div id="status" class="bg-black p-4 rounded-lg font-mono text-[11px] overflow-y-auto max-h-[350px] border border-slate-700 leading-relaxed text-green-400 shadow-inner">
+            </div>
+        </div>
+    </div>
+
+    <footer class="max-w-3xl mx-auto mt-8 text-center text-slate-500 text-xs">
+        <p>GitHub PagesなどのWebサーバー上で実行してください。ローカルのfile://環境ではCORSエラーが発生します。</p>
+    </footer>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const statusContainer = document.getElementById('statusContainer');
+        const downloadBtn = document.getElementById('downloadBtn');
+        
+        const PROXIES = [
+            "https://api.allorigins.win/raw?url=",
+            "https://corsproxy.io/?",
+            "https://thingproxy.freeboard.io/fetch/"
+        ];
+
+        function log(msg, type = 'info') {
+            statusContainer.classList.remove('hidden');
+            const entry = document.createElement('div');
+            const time = new Date().toLocaleTimeString();
+            
+            let color = "text-green-400";
+            if(type === 'error') color = "text-red-400 font-bold";
+            if(type === 'warn') color = "text-amber-400";
+
+            entry.className = "mb-1 border-b border-slate-900 pb-1 text-wrap break-all";
+            entry.innerHTML = `<span class="text-slate-600">[${time}]</span> <span class="${color}">${msg}</span>`;
+            statusDiv.appendChild(entry);
+            statusDiv.scrollTop = statusDiv.scrollHeight;
+        }
+
+        function clearLog() { statusDiv.innerHTML = ""; }
+
+        function setButtonLoading(isLoading) {
+            if (isLoading) {
+                downloadBtn.disabled = true;
+                downloadBtn.innerHTML = '<div class="loading-spinner"></div> 解析中...';
+                downloadBtn.classList.replace('bg-blue-600', 'bg-slate-600');
+            } else {
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = '<span>ダウンロード開始</span>';
+                downloadBtn.classList.replace('bg-slate-600', 'bg-blue-600');
+            }
+        }
+
+        function normalizeUrl(url) {
+            url = url.trim();
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+            return url;
+        }
+
+        // 複数のプロキシを渡り歩く高度なフェッチ
+        async function smartFetch(targetUrl, preferredProxy) {
+            // まず優先プロキシを試す
+            let proxyList = [preferredProxy, ...PROXIES.filter(p => p !== preferredProxy)];
+            
+            for (let proxy of proxyList) {
+                try {
+                    const fullUrl = proxy + encodeURIComponent(targetUrl);
+                    const response = await fetch(fullUrl, { cache: 'no-store' });
+                    if (response.ok) return response;
+                    log(`プロキシエラー (${response.status}): 次の候補を試します...`, 'warn');
+                } catch (e) {
+                    log(`接続失敗: ${proxy.split('/')[2]}`, 'warn');
+                }
+            }
+            throw new Error("利用可能なすべてのプロキシで取得に失敗しました。");
+        }
+
+        async function startDownload() {
+            let urlInput = document.getElementById('targetUrl').value;
+            const selectedProxy = document.getElementById('proxySelect').value;
+
+            if (!urlInput) return alert("対象サイトのURLを入力してください");
+            if (window.location.protocol === 'file:') {
+                alert("file:// プロトコルでは動作しません。GitHub Pages等にアップロードしてください。");
+            }
+            
+            const baseUrl = normalizeUrl(urlInput);
+            clearLog();
+            setButtonLoading(true);
+            log(`セッション開始: ${baseUrl}`);
+
+            const zip = new JSZip();
+            const fetchedUrls = new Set();
+
+            try {
+                log("メインHTMLの取得中...");
+                const mainResponse = await smartFetch(baseUrl, selectedProxy);
+                const htmlText = await mainResponse.text();
+                
+                zip.file("index.html", htmlText);
+                log("HTML取得完了。リソースを解析します...");
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, "text/html");
+                const resourceLinks = [];
+
+                const selectors = [
+                    { tag: 'img', attr: 'src', folder: 'images' },
+                    { tag: 'link[rel="stylesheet"]', attr: 'href', folder: 'css' },
+                    { tag: 'script[src]', attr: 'src', folder: 'js' },
+                    { tag: 'link[rel*="icon"]', attr: 'href', folder: 'favicons' }
+                ];
+
+                selectors.forEach(s => {
+                    doc.querySelectorAll(s.tag).forEach(el => {
+                        let link = el.getAttribute(s.attr);
+                        if (link && !link.startsWith('data:')) {
+                            try {
+                                const absoluteUrl = new URL(link, baseUrl).href;
+                                resourceLinks.push({ url: absoluteUrl, type: s.tag, folder: s.folder });
+                            } catch(e) {}
+                        }
+                    });
+                });
+
+                const uniqueResources = resourceLinks.filter(item => {
+                    if (fetchedUrls.has(item.url)) return false;
+                    fetchedUrls.add(item.url);
+                    return true;
+                });
+
+                log(`${uniqueResources.length} 個のリソースが見つかりました。`);
+
+                // リソース取得 (一気にやるとブロックされやすいため、少しずつ実行)
+                const downloadResource = async (res, index) => {
+                    try {
+                        const urlObj = new URL(res.url);
+                        let fileName = urlObj.pathname.split('/').pop() || `resource_${index}`;
+                        
+                        if (!fileName.includes('.')) {
+                            if (res.type === 'script') fileName += '.js';
+                            else if (res.type === 'link') fileName += '.css';
+                        }
+
+                        const resResponse = await smartFetch(res.url, selectedProxy);
+                        const blob = await resResponse.blob();
+                        zip.file(`${res.folder}/${fileName}`, blob);
+                        log(`取得成功: ${fileName}`);
+                    } catch (e) {
+                        log(`取得失敗: ${res.url.substring(0, 40)}...`, 'error');
+                    }
+                };
+
+                // 並列度を制限して実行
+                const CHUNK_SIZE = 3;
+                for (let i = 0; i < uniqueResources.length; i += CHUNK_SIZE) {
+                    const chunk = uniqueResources.slice(i, i + CHUNK_SIZE);
+                    await Promise.all(chunk.map((res, idx) => downloadResource(res, i + idx)));
+                }
+
+                log("ZIPパッケージを生成しています...");
+                const zipBlob = await zip.generateAsync({ type: "blob" });
+                const host = new URL(baseUrl).hostname;
+                saveAs(zipBlob, `${host}_resources.zip`);
+                log("🎉 完了！ZIPファイルを保存しました。", 'info');
+
+            } catch (err) {
+                log(`致命的エラー: ${err.message}`, 'error');
+                log("ヒント: 対象サイトがプロキシを遮断している可能性があります。", 'warn');
+            } finally {
+                setButtonLoading(false);
+            }
+        }
+    </script>
+</body>
+</html>
